@@ -71,6 +71,7 @@ export default function Notes() {
         setIsLoading(true);
         try {
             if (file.current) {
+                s3Delete(note.attachment);
                 attachment = await s3Upload(file.current);
             }
             await saveNote({
@@ -85,7 +86,7 @@ export default function Notes() {
     }
 
     function deleteNote() {
-        s3Delete(note.attachmentURL);
+        s3Delete(note.attachment);
         return API.del("mkl-notes", `/mkl-notes/${id}`);
     }
 
