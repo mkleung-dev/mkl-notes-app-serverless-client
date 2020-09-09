@@ -6,7 +6,6 @@ import { onError } from "../libs/errorLib";
 import config from "../config";
 import { API } from "aws-amplify";
 import "./NewNote.css";
-import { s3Upload } from "../libs/awsLib";
 
 export default function NewNote() {
     const file = useRef(null);
@@ -18,25 +17,13 @@ export default function NewNote() {
         return content.length > 0;
     }
 
-    function handleFileChange(event) {
-        file.current = event.target.files[0];
-    }
-
     async function handleSubmit(event) {
         event.preventDefault();
 
-        if (file.current && file.current.size > config.MAX_ATTACHMENT_SIZE) {
-            alert(
-                `Please pick a file smaller than ${config.MAX_ATTACHMENT_SIZE / 1000000} MB.`
-            );
-            return;
-        }
         setIsLoading(true);
-
         try {
-            const attachment = file.current ? await s3Upload(file.current) : null;
 
-            await createNote({ content, attachment });
+            await createNote({ content });
             history.push("/");
         } catch(e) {
             onError(e);
@@ -55,10 +42,6 @@ export default function NewNote() {
             <form onSubmit={handleSubmit}>
                 <FormGroup controlId="content">
                     <FormControl value={content} componentClass="textarea" onChange={e => setContent(e.target.value)} />
-                </FormGroup>
-                <FormGroup controlId="file">
-                    <ControlLabel>Attachment</ControlLabel>
-                    <FormControl type="file" onChange={handleFileChange} />
                 </FormGroup>
                 <LoaderButton block type="submit" bsSize="large" bsStyle="primary" isLoading={isLoading} disabled={!validateForm()}>
                     Create

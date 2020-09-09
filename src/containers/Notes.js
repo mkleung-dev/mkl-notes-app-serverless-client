@@ -6,8 +6,6 @@ import { FormGroup, FormControl, ControlLabel } from "react-bootstrap";
 import LoaderButton from "../components/LoaderButton";
 import config from "../config";
 import "./Notes.css";
-import { s3Upload } from "../libs/awsLib";
-import { s3Delete } from "../libs/awsLib";
 
 export default function Notes() {
     const file = useRef(null);
@@ -27,10 +25,6 @@ export default function Notes() {
             try {
                 const note = await loadNote();
                 const { content, attachment } = note;
-
-                if (attachment) {
-                    note.attachmentURL = await Storage.vault.get(attachment);
-                }
 
                 setContent(content);
                 setNote(note);
@@ -61,22 +55,12 @@ export default function Notes() {
     }
 
     async function handleSubmit(event) {
-        let attachment;
         event.preventDefault();
 
-        if (file.current && file.current.size > config.MAX_ATTACHMENT_SIZE) {
-            alert(`Please pick a file smaller than ${config.MAX_ATTACHMENT_SIZE / 1000000} MB.`);
-            return;
-        }
         setIsLoading(true);
         try {
-            if (file.current) {
-                s3Delete(note.attachment);
-                attachment = await s3Upload(file.current);
-            }
             await saveNote({
                 content,
-                attachment: attachment || note.attachment
             });
             history.push("/");
         } catch(e) {
@@ -86,7 +70,6 @@ export default function Notes() {
     }
 
     function deleteNote() {
-        s3Delete(note.attachment);
         return API.del("mkl-notes", `/mkl-notes/${id}`);
     }
 
@@ -115,20 +98,6 @@ export default function Notes() {
                 <form onSubmit={handleSubmit}>
                     <FormGroup controlId="content">
                         <FormControl value={content} componentClass="textarea" onChange={e => setContent(e.target.value)} />
-                    </FormGroup>
-                    {note.attachment && (
-                        <FormGroup>
-                            <ControlLabel>Attachment</ControlLabel>
-                            <FormControl.Static>
-                                <a target="_blank" rel="noopener noreferrer" href={note.attachmentURL}>
-                                    {formatFilename(note.attachment)}
-                                </a>
-                            </FormControl.Static>
-                        </FormGroup>
-                    )}
-                    <FormGroup controlId="file">
-                        {!note.attachment && <ControlLabel>Attachment</ControlLabel>}
-                        <FormControl onChange={handleFileChange} type="file" />
                     </FormGroup>
                     <LoaderButton block type="submit" bsSize="large" bsStyle="primary" isLoading={isLoading} disabled={!validateForm()}>Save</LoaderButton>
                     <LoaderButton block bsSize="large" bsStyle="danger" isLoading={isDeleting} onClick={handleDelete}>Delete</LoaderButton>

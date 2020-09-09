@@ -30,7 +30,7 @@ export default function Routes() {
             </AuthenticatedRoute>
             {}
             <Route>
-                <NotFound />
+                <Home />
             </Route>
         </Switch>
     );
